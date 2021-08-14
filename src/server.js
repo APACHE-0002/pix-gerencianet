@@ -4,69 +4,19 @@ if(process.env.NODE_ENV !== 'production'){
     require('dotenv').config()
 }
 
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
+
 const express = require('express');
-const { reset } = require('nodemon');
-
-//utilizando do fs para que o diretorio apontado consiga ser lido
-// em qualquer tipo de sistema, windows, mac, etc...
-// __dirname aponta diretamente ao repositorio em questao
-// ../ retorna uma pasta
-// const cert esta direcionando ao arquivo de certificado
-const cert = fs.readFileSync(
-    path.resolve(__dirname, `../certs/${process.env.GN_CERT}`)
-)
-
-//certificado
-const agent = new https.Agent({
-    pfx: cert,
-    passphrase: ''
-});
-
-//somando clientid e clientsecurity, e transformando em base64, 
-// que é a transformaçao necessaria pra fazer o token
-//token tipo basic
-const credentials = Buffer.from(
-    `${process.env.GN_CLIENT_ID}:${process.env.GN_CLIENT_SECRET}`
-).toString('base64');
+const GNRequest = require('./apis/gerencianet');
 
 const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', 'src/views');
 
+const reqGNAlready = GNRequest();
+
 app.get('/', async (req, res) => {
-
-    //axios.post enviando, o token transformado, o certificado,
-// entao no .then, ja com a resposta
-const authResponse = await axios({
-    method: 'POST',
-    url: `${process.env.GN_ENDPOINT}/oauth/token`,
-    headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type':'application/json'
-    },
-    httpsAgent: agent,
-    data: {
-        grant_type: 'client_credentials'
-    }
-})
-
-
-    const accessToken = authResponse.data?.access_token;
-
-    const reqGN = axios.create({
-        baseURL: process.env.GN_ENDPOINT,
-        httpsAgent: agent,
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        }
-    });
-
+    const reqGN = await reqGNAlready;
     const dataCob ={
         calendario: {
             expiracao: 3600
@@ -80,7 +30,6 @@ const authResponse = await axios({
 
 
     const cobResponse = await reqGN.post('/v2/cob', dataCob);
-
 
     const qrcodeResponse = await reqGN.get(`/v2/loc/${cobResponse.data.loc.id}/qrcode`);
 
