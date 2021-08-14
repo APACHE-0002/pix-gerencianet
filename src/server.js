@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const express = require('express');
+const { reset } = require('nodemon');
 
 //utilizando do fs para que o diretorio apontado consiga ser lido
 // em qualquer tipo de sistema, windows, mac, etc...
@@ -80,7 +81,15 @@ const authResponse = await axios({
 
     const cobResponse = await reqGN.post('/v2/cob', dataCob);
 
-    res.send(cobResponse.data);
+
+    const qrcodeResponse = await reqGN.get(`/v2/loc/${cobResponse.data.loc.id}/qrcode`);
+
+    //se der mais de um res.send, a aplicaçao retornara erro
+
+    
+    res.render('qrcode',  { qrcodeImage: qrcodeResponse.data.imagemQrcode });
+
+
 
 
 /*
