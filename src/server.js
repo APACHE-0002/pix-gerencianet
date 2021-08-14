@@ -8,6 +8,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const express = require('express');
 
 //utilizando do fs para que o diretorio apontado consiga ser lido
 // em qualquer tipo de sistema, windows, mac, etc...
@@ -29,11 +30,18 @@ const agent = new https.Agent({
 //token tipo basic
 const credentials = Buffer.from(
     `${process.env.GN_CLIENT_ID}:${process.env.GN_CLIENT_SECRET}`
-).toString('base64')
+).toString('base64');
 
-//axios.post enviando, o token transformado, o certificado,
+const app = express();
+
+app.set('view engine', 'ejs');
+app.set('views', 'src/views');
+
+app.get('/', async (req, res) => {
+
+    //axios.post enviando, o token transformado, o certificado,
 // entao no .then, ja com a resposta
-axios({
+const authResponse = await axios({
     method: 'POST',
     url: `${process.env.GN_ENDPOINT}/oauth/token`,
     headers: {
@@ -44,8 +52,10 @@ axios({
     data: {
         grant_type: 'client_credentials'
     }
-}).then((response) => {
-    const accessToken = response.data?.access_token;
+})
+
+
+    const accessToken = authResponse.data?.access_token;
 
     const reqGN = axios.create({
         baseURL: process.env.GN_ENDPOINT,
@@ -65,15 +75,12 @@ axios({
         },
         chave: '48762700820',
         solicitacaoPagador: 'Cobrança dos serviços'
-    }
+    };
 
 
-    reqGN.post('/v2/cob', dataCob).then((response) => console.log(response.data)
-    );
-});
+    const cobResponse = await reqGN.post('/v2/cob', dataCob);
 
-
-
+    res.send(cobResponse.data);
 
 
 /*
@@ -85,3 +92,10 @@ curl --request POST \
 	"grant_type": "client_credentials"
 }'
 */
+
+});
+
+app.listen(8000, () => {
+    console.log('running');
+});
+
