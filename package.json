@@ -1,0 +1,17 @@
+{
+  "name": "PIXapp",
+  "version": "1.0.0",
+  "description": "Integração API Pix GerenciaNet",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts":{
+    "start:dev": "nodemon src/server.js"
+  },
+  "devDependencies": {
+    "dotenv": "^10.0.0",
+    "nodemon": "^2.0.12"
+  },
+  "peerDependencies": {
+    "axios": "^0.21.1"
+  }
+}
